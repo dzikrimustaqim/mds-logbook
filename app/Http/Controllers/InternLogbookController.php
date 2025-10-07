@@ -17,7 +17,6 @@ class InternLogbookController extends Controller
 
     /**
      * Menampilkan daftar logbook milik student yang sedang login.
-     * Route: /logbooks
      */
     public function index()
     {
@@ -27,7 +26,6 @@ class InternLogbookController extends Controller
 
     /**
      * Menampilkan form untuk membuat logbook baru.
-     * Route: /logbooks/create
      */
     public function create()
     {
@@ -36,7 +34,6 @@ class InternLogbookController extends Controller
 
     /**
      * Menyimpan logbook baru.
-     * Route: POST /logbooks
      */
     public function store(Request $request)
     {
@@ -48,12 +45,11 @@ class InternLogbookController extends Controller
 
         Auth::user()->logbooks()->create($validated);
 
-        return redirect()->route('logbooks.index')->with('status', 'Logbook berhasil disimpan!');
+        return redirect()->route('student.logbooks.index')->with('status', 'Logbook berhasil disimpan!');
     }
 
     /**
      * Menampilkan form untuk mengedit logbook.
-     * Route: /logbooks/{logbook}/edit
      */
     public function edit(InternLogbook $logbook)
     {
@@ -67,7 +63,6 @@ class InternLogbookController extends Controller
 
     /**
      * Mengupdate logbook.
-     * Route: PATCH/PUT /logbooks/{logbook}
      */
     public function update(Request $request, InternLogbook $logbook)
     {
@@ -77,31 +72,36 @@ class InternLogbookController extends Controller
         }
 
         $validated = $request->validate([
-            // Rule::unique di sini opsional, tapi berguna jika ingin memastikan hanya satu logbook per hari per user.
-            'date' => ['required', 'date'], 
+            'date' => ['required', 'date'],
             'title' => ['nullable', 'string', 'max:255'],
             'activity' => ['required', 'string'],
         ]);
 
         $logbook->update($validated);
 
-        return redirect()->route('logbooks.index')->with('status', 'Logbook berhasil diperbarui!');
+        return redirect()->route('student.logbooks.index')->with('status', 'Logbook berhasil diperbarui!');
     }
 
     /**
      * Menghapus logbook.
-     * Route: DELETE /logbooks/{logbook}
+     * PERBAIKAN #1: Nama variabel diubah menjadi $intern_logbook
+     * PERBAIKAN #2: Logika otorisasi diperbaiki agar Admin bisa menghapus.
      */
-    public function destroy(InternLogbook $logbook)
+    public function destroy(InternLogbook $intern_logbook)
     {
-        // Otorisasi: Pastikan student hanya bisa hapus logbook miliknya.
-        if (Auth::id() !== $logbook->user_id) {
-            abort(403);
+        // Otorisasi: Cek apakah user adalah admin ATAU pemilik logbook.
+        if (!Auth::user()->hasRole('admin') && Auth::id() !== $intern_logbook->user_id) {
+            abort(403, 'Anda tidak memiliki izin untuk menghapus logbook ini.');
         }
         
-        $logbook->delete();
+        $intern_logbook->delete();
 
-        return redirect()->route('logbooks.index')->with('status', 'Logbook berhasil dihapus!');
+        // Redirect ke halaman yang sesuai tergantung role
+        if (Auth::user()->hasRole('admin')) {
+            return redirect()->route('admin.logbooks.index')->with('status', 'Logbook berhasil dihapus!');
+        }
+
+        return redirect()->route('student.logbooks.index')->with('status', 'Logbook berhasil dihapus!');
     }
 
     /*
@@ -112,39 +112,63 @@ class InternLogbookController extends Controller
 
     /**
      * Menampilkan SEMUA logbook untuk Admin.
-     * Route: admin/logbooks (Menggunakan route admin.logbooks.index)
      */
     public function indexAdmin()
     {
-        // Ambil semua logbook, urutkan berdasarkan yang terbaru dan sertakan data user (student)
-        $logbooks = InternLogbook::with('user')->latest()->paginate(15);
+        $query = InternLogbook::with('user');
+
+        // Search functionality
+        if (request('search')) {
+            $search = request('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                ->orWhere('activity', 'like', "%{$search}%")
+                ->orWhereHas('user', function ($userQuery) use ($search) {
+                    $userQuery->where('name', 'like', "%{$search}%")
+                                ->orWhere('username', 'like', "%{$search}%");
+                });
+            });
+        }
+
+        // Filter by status
+        if (request('status')) {
+            $status = request('status');
+            if ($status === 'approved') {
+                $query->where('is_approved', true);
+            } elseif ($status === 'pending') {
+                $query->where('is_approved', false);
+            }
+        }
+
+        // Order by latest and paginate
+        $logbooks = $query->latest()->paginate(15)->appends(request()->query());
 
         return view('admin.logbooks.index', compact('logbooks'));
     }
 
     /**
      * Menampilkan detail logbook (untuk review Admin).
-     * Route: admin/logbooks/{logbook}
+     * PERBAIKAN #1: Nama variabel diubah menjadi $intern_logbook
      */
-    public function show(InternLogbook $logbook)
+    public function show(InternLogbook $intern_logbook)
     {
-        // Karena ini adalah show method, kita akan buat view khusus Admin untuk detail review
-        return view('admin.logbooks.show', compact('logbook'));
+        // Ubah nama variabel yang dikirim ke view agar konsisten
+        return view('admin.logbooks.show', ['logbook' => $intern_logbook]);
     }
 
     /**
-     * Aksi untuk menyetujui logbook (Admin).
-     * Route: PATCH admin/logbooks/{logbook}/approve
+     * Aksi untuk menyetujui atau batal menyetujui logbook (Admin).
+     * PERBAIKAN #1: Nama variabel diubah menjadi $intern_logbook
+     * PERBAIKAN #3: Logika diubah menjadi toggle (approve/unapprove)
      */
-    public function approve(InternLogbook $logbook)
+    public function approve(InternLogbook $intern_logbook)
     {
-        // Cek jika sudah disetujui, hindari update berulang
-        if ($logbook->is_approved) {
-             return back()->with('warning', 'Logbook ini sudah disetujui sebelumnya.');
-        }
-        
-        $logbook->update(['is_approved' => true]);
+        // Toggle status is_approved
+        $newStatus = !$intern_logbook->is_approved;
+        $intern_logbook->update(['is_approved' => $newStatus]);
 
-        return back()->with('status', 'Logbook berhasil disetujui!');
+        $message = $newStatus ? 'Logbook berhasil disetujui!' : 'Persetujuan logbook berhasil dibatalkan!';
+
+        return back()->with('status', $message);
     }
 }

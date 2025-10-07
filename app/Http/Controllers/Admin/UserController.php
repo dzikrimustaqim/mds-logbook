@@ -17,9 +17,21 @@ class UserController extends Controller
      */
     public function index()
     {
-        // Ambil semua user yang memiliki role 'student'
-        $students = User::role('student')->latest()->paginate(15);
-        
+        $query = User::role('student');
+
+        // Search functionality
+        if (request('search')) {
+            $search = request('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                ->orWhere('username', 'like', "%{$search}%")
+                ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        // Order by latest and paginate
+        $students = $query->latest()->paginate(15)->appends(request()->query());
+
         return view('admin.users.index', compact('students'));
     }
 

@@ -1,11 +1,161 @@
-@import 'tailwindcss';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
-@source '../**/*.blade.php';
-@source '../**/*.js';
+@layer base {
+    body {
+        @apply font-sans text-white; 
+    }
+    h1, h2, h3, h4, h5, h6 {
+        @apply font-extrabold tracking-tight text-white;
+    }
+}
 
-@theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+/* Wrapper untuk memastikan semua element centered */
+.wrapper {
+    @apply flex flex-col items-center justify-center w-full;
+}
+
+/* Switch Container - Centered */
+.switch {
+    @apply relative flex flex-col items-center w-full mb-6;
+}
+
+/* Label "Log in" dan "Sign up" di samping toggle */
+.card-side {
+    @apply relative flex items-center justify-center w-full h-[20px] mb-4;
+}
+
+.card-side::before {
+    @apply absolute left-1/2 -translate-x-[90px] top-0 content-['Log_in'] text-white font-extrabold text-sm underline cursor-pointer;
+}
+
+.card-side::after {
+    @apply absolute left-1/2 translate-x-[35px] top-0 content-['Sign_up'] text-white font-extrabold text-sm cursor-pointer;
+}
+
+/* Checkbox Toggle - Hidden */
+.toggle {
+    @apply opacity-0 w-0 h-0 absolute;
+}
+
+/* Slider Background */
+.slider {
+    @apply box-border w-[50px] h-[20px] bg-mds-blue-700 border-4 border-mds-black rounded-md cursor-pointer transition-all duration-300 relative;
+    box-shadow: 4px 4px 0 0 rgba(0, 0, 0, 0.7);
+}
+
+/* Slider Circle */
+.slider:before {
+    @apply absolute content-[''] h-[16px] w-[16px] left-[-2px] bottom-[0px] bg-white border-4 border-mds-black rounded-md transition-all duration-300;
+    box-shadow: 0 2px 0 #111827;
+}
+
+/* Toggle Checked State */
+.toggle:checked + .slider {
+    @apply bg-mds-green-500;
+}
+
+.toggle:checked + .slider:before {
+    transform: translateX(30px);
+}
+
+.toggle:checked ~ .card-side:before {
+    @apply no-underline;
+}
+
+.toggle:checked ~ .card-side:after {
+    @apply underline;
+}
+
+/* Flip Card Container */
+.flip-card__inner {
+    @apply w-full max-w-[350px] h-[450px] relative text-center;
+    transform-style: preserve-3d;
+    perspective: 1000px;
+    transition: transform 0.7s;
+}
+
+.toggle:checked ~ .flip-card__inner {
+    transform: rotateY(180deg);
+}
+
+/* Front and Back Cards */
+.flip-card__front, 
+.flip-card__back {
+    @apply w-full h-full flex flex-col justify-center items-center p-8 bg-white border-6 border-mds-black rounded-xl gap-5;
+    position: absolute;
+    top: 0;
+    left: 0;
+    backface-visibility: hidden;
+    box-shadow: 8px 8px 0 0 rgba(0, 0, 0, 0.7);
+}
+
+.flip-card__back {
+    transform: rotateY(180deg);
+}
+
+/* Form Container */
+.flip-card__form {
+    @apply flex flex-col items-center gap-4 w-full;
+}
+
+/* Title */
+.title {
+    @apply text-3xl font-extrabold text-mds-blue-500 mb-2;
+}
+
+/* Input Fields */
+.flip-card__input {
+    @apply w-full max-w-[280px] h-12 px-4 bg-white border-4 border-mds-black rounded-lg text-gray-800 text-base font-semibold outline-none;
+    @apply placeholder-gray-500 placeholder-opacity-70;
+    transition: all 0.3s;
+}
+
+.flip-card__input:focus {
+    @apply border-mds-blue-500;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+/* Error Messages */
+.text-red-500 {
+    @apply text-xs mt-1 font-semibold;
+}
+
+/* Submit Button */
+.flip-card__btn {
+    @apply w-36 h-12 bg-mds-orange-500 border-4 border-mds-black rounded-lg text-white font-extrabold text-base cursor-pointer mt-2;
+    box-shadow: 6px 6px 0 0 rgba(0, 0, 0, 0.7);
+    transition: all 0.2s;
+}
+
+.flip-card__btn:hover {
+    @apply bg-mds-green-500;
+    transform: translateY(-2px);
+    box-shadow: 8px 8px 0 0 rgba(0, 0, 0, 0.7);
+}
+
+.flip-card__btn:active {
+    transform: translateX(4px) translateY(4px);
+    box-shadow: 2px 2px 0 0 rgba(0, 0, 0, 0.7);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 640px) {
+    .flip-card__inner {
+        @apply max-w-[320px] h-[420px];
+    }
+    
+    .flip-card__front, 
+    .flip-card__back {
+        @apply p-6;
+    }
+    
+    .flip-card__input {
+        @apply max-w-[260px];
+    }
+    
+    .title {
+        @apply text-2xl;
+    }
 }
