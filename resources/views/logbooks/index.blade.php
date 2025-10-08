@@ -40,11 +40,54 @@
                        value="{{ request('search') }}"
                        class="w-full pl-14 pr-4 py-3 border-4 border-mds-black font-bold text-mds-black placeholder:text-mds-gray-400 focus:outline-none focus:ring-4 focus:ring-mds-yellow-500">
             </div>
-            <select name="status" class="border-4 border-mds-black font-bold text-mds-black p-3 focus:outline-none focus:ring-4 focus:ring-mds-yellow-500">
-                <option value="">All Status</option>
-                <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
-                <option value="approved" {{ request('status') === 'approved' ? 'selected' : '' }}>Approved</option>
-            </select>
+            
+            <!-- Custom Neubrutalism Dropdown with Card Animation -->
+            <div class="relative">
+                <input type="hidden" name="status" id="statusInput" value="{{ request('status') }}">
+                <button type="button" 
+                        onclick="toggleStatusDropdown()"
+                        class="w-full md:w-auto border-4 border-mds-black font-black text-mds-black px-6 py-3 bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all flex items-center justify-between gap-4 min-w-[180px]">
+                    <span id="statusButtonText">
+                        @if(request('status') === 'pending')
+                            PENDING
+                        @elseif(request('status') === 'approved')
+                            APPROVED
+                        @else
+                            ALL STATUS
+                        @endif
+                    </span>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" class="w-5 h-5 transition-transform" id="statusDropdownIcon">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                    </svg>
+                </button>
+                
+                <!-- Dropdown Menu with Card Animation -->
+                <div id="statusDropdown" 
+                     class="hidden absolute top-full left-0 right-0 mt-2 z-50 space-y-2">
+                    <div class="status-card bg-white border-4 border-mds-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] overflow-hidden opacity-0 transform translate-y-[-20px] transition-all duration-300">
+                        <button type="button" 
+                                onclick="selectStatus('', 'ALL STATUS')"
+                                class="w-full text-left px-6 py-3 font-black text-mds-black hover:bg-mds-yellow-500 transition-colors border-b-4 border-mds-black {{ request('status') === null ? 'bg-mds-yellow-100' : '' }}">
+                            ALL STATUS
+                        </button>
+                    </div>
+                    <div class="status-card bg-white border-4 border-mds-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] overflow-hidden opacity-0 transform translate-y-[-20px] transition-all duration-300 delay-100">
+                        <button type="button" 
+                                onclick="selectStatus('pending', 'PENDING')"
+                                class="w-full text-left px-6 py-3 font-black text-mds-black hover:bg-mds-orange-500 hover:text-white transition-colors border-b-4 border-mds-black {{ request('status') === 'pending' ? 'bg-mds-orange-100' : '' }}">
+                            PENDING
+                        </button>
+                    </div>
+                    <div class="status-card bg-white border-4 border-mds-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] overflow-hidden opacity-0 transform translate-y-[-20px] transition-all duration-300 delay-200">
+                        <button type="button" 
+                                onclick="selectStatus('approved', 'APPROVED')"
+                                class="w-full text-left px-6 py-3 font-black text-mds-black hover:bg-mds-green-500 hover:text-white transition-colors {{ request('status') === 'approved' ? 'bg-mds-green-100' : '' }}">
+                            APPROVED
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
             <button type="submit" 
                     class="bg-white text-mds-blue-500 font-black border-4 border-mds-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] px-6 py-3 hover:bg-mds-blue-500 hover:text-white transition active:translate-x-1 active:translate-y-1 active:shadow-none whitespace-nowrap">
                 SEARCH
@@ -135,19 +178,17 @@
                                 </a>
 
                                 <!-- Delete Button -->
-                                <form action="{{ route('student.logbooks.destroy', $logbook->id) }}" method="POST" class="inline">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit"
-                                            class="inline-flex items-center gap-1 bg-white text-red-500 font-black border-4 border-mds-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] px-3 py-2 hover:bg-red-500 hover:text-white transition active:translate-x-1 active:translate-y-1 active:shadow-none"
-                                            onclick="return confirm('⚠️ Are you sure you want to DELETE this logbook?\n\nThis action cannot be undone!')"
-                                            title="Delete Logbook">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-                                        </svg>
-                                        <span class="text-xs">DELETE</span>
-                                    </button>
-                                </form>
+                                @role('admin')
+                                <button type="button"
+                                        onclick="openDeleteModal('{{ $logbook->id }}', '{{ $logbook->title ?: 'Untitled Logbook' }}')"
+                                        class="inline-flex items-center gap-1 bg-white text-red-500 font-black border-4 border-mds-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] px-3 py-2 hover:bg-red-500 hover:text-white transition active:translate-x-1 active:translate-y-1 active:shadow-none"
+                                        title="Delete Logbook">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                                    </svg>
+                                    <span class="text-xs">DELETE</span>
+                                </button>
+                                @endrole
                             </div>
                         </td>
                     </tr>
@@ -196,6 +237,58 @@
         </div>
     </div>
     @endif
+
+    <!-- Delete Modal -->
+    <div id="deleteModal" class="fixed inset-0 z-[9999] hidden items-center justify-center p-4">
+        <!-- Overlay -->
+        <div class="absolute inset-0 bg-black bg-opacity-60" onclick="closeDeleteModal()"></div>
+        
+        <!-- Modal Content -->
+        <div class="relative bg-white border-6 border-mds-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] max-w-md w-full animate-bounce-in">
+            <!-- Header -->
+            <div class="bg-red-500 border-b-6 border-mds-black p-6">
+                <div class="flex items-center gap-4">
+                    <div class="bg-white border-4 border-mds-black p-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-8 h-8 text-red-500">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-2xl font-black text-white">WARNING</h3>
+                        <p class="text-sm font-bold text-white opacity-90">This action cannot be undone</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Body -->
+            <div class="p-6">
+                <p class="text-lg font-bold text-mds-black mb-2">
+                    Are you sure you want to delete:
+                </p>
+                <p class="text-xl font-black text-red-500 mb-4" id="logbookTitleDisplay"></p>
+                <p class="text-sm font-bold text-mds-gray-600">
+                    The logbook will be permanently deleted.
+                </p>
+            </div>
+
+            <!-- Footer -->
+            <div class="border-t-6 border-mds-black p-6 flex gap-3">
+                <button type="button"
+                        onclick="closeDeleteModal()"
+                        class="flex-1 bg-white text-mds-black font-black border-4 border-mds-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] px-6 py-3 hover:bg-mds-gray-200 transition active:translate-x-1 active:translate-y-1 active:shadow-none">
+                    CANCEL
+                </button>
+                <form id="deleteForm" method="POST" class="flex-1">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit"
+                            class="w-full bg-red-500 text-white font-black border-4 border-mds-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] px-6 py-3 hover:bg-red-700 transition active:translate-x-1 active:translate-y-1 active:shadow-none">
+                        DELETE
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
 
 <style>
@@ -233,5 +326,135 @@
         color: #9ca3af;
         cursor: not-allowed;
     }
+
+    @keyframes bounce-in {
+        0% {
+            transform: scale(0.8);
+            opacity: 0;
+        }
+        50% {
+            transform: scale(1.05);
+        }
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
+    .animate-bounce-in {
+        animation: bounce-in 0.3s ease-out;
+    }
+    
+    /* Card Animation */
+    .status-card {
+        animation: cardSlideIn 0.3s ease forwards;
+    }
+    
+    @keyframes cardSlideIn {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
 </style>
+
+<script>
+    // Status Dropdown Functions
+    function toggleStatusDropdown() {
+        const dropdown = document.getElementById('statusDropdown');
+        const icon = document.getElementById('statusDropdownIcon');
+        const cards = document.querySelectorAll('.status-card');
+        
+        const isHidden = dropdown.classList.contains('hidden');
+        
+        if (isHidden) {
+            dropdown.classList.remove('hidden');
+            setTimeout(() => {
+                cards.forEach((card, index) => {
+                    setTimeout(() => {
+                        card.style.opacity = '1';
+                        card.style.transform = 'translateY(0)';
+                    }, index * 100);
+                });
+            }, 10);
+        } else {
+            cards.forEach((card, index) => {
+                setTimeout(() => {
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateY(-20px)';
+                }, (cards.length - 1 - index) * 100);
+            });
+            setTimeout(() => {
+                dropdown.classList.add('hidden');
+            }, cards.length * 100);
+        }
+        
+        icon.classList.toggle('rotate-180');
+    }
+
+    function selectStatus(value, text) {
+        document.getElementById('statusInput').value = value;
+        document.getElementById('statusButtonText').textContent = text;
+        
+        // Reset and hide dropdown
+        const cards = document.querySelectorAll('.status-card');
+        cards.forEach(card => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(-20px)';
+        });
+        
+        setTimeout(() => {
+            document.getElementById('statusDropdown').classList.add('hidden');
+            document.getElementById('statusDropdownIcon').classList.remove('rotate-180');
+        }, 200);
+        
+        // Submit form
+        document.querySelector('form').submit();
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        const dropdown = document.getElementById('statusDropdown');
+        const button = dropdown?.previousElementSibling;
+        
+        if (dropdown && !dropdown.contains(e.target) && e.target !== button && !button?.contains(e.target)) {
+            const cards = document.querySelectorAll('.status-card');
+            cards.forEach(card => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(-20px)';
+            });
+            
+            setTimeout(() => {
+                dropdown.classList.add('hidden');
+                document.getElementById('statusDropdownIcon')?.classList.remove('rotate-180');
+            }, 200);
+        }
+    });
+
+    // Delete Modal Functions
+    function openDeleteModal(logbookId, logbookTitle) {
+        const modal = document.getElementById('deleteModal');
+        const form = document.getElementById('deleteForm');
+        const titleDisplay = document.getElementById('logbookTitleDisplay');
+        
+        form.action = `/student/logbooks/${logbookId}`;
+        titleDisplay.textContent = logbookTitle;
+        
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    function closeDeleteModal() {
+        const modal = document.getElementById('deleteModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
+    // Close modal with ESC key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeDeleteModal();
+        }
+    });
+</script>
 @endsection

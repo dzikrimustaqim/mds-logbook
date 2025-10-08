@@ -31,14 +31,15 @@ Route::middleware('auth')->group(function () {
     });
 });
 
-// Student routes
+// Student routes - ALLOW DELETE (student can delete their own logbook)
 Route::middleware(['auth', 'role:student'])->prefix('student')->name('student.')->group(function () {
     
     Route::get('/dashboard', function () {
         return view('student.dashboard');
     })->name('dashboard');
     
-    Route::resource('logbooks', InternLogbookController::class)->except(['destroy']);
+    // Full CRUD - student can delete their own logbook
+    Route::resource('logbooks', InternLogbookController::class);
 });
 
 // Admin routes
@@ -51,7 +52,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::resource('users', UserController::class);
 
     Route::prefix('logbooks')->name('logbooks.')->group(function () {
-        Route::get('/', [InternLogbookController::class, 'indexForAdmin'])->name('index');
+        Route::get('/', [InternLogbookController::class, 'indexAdmin'])->name('index');
         Route::get('/{intern_logbook}', [InternLogbookController::class, 'show'])->name('show');
         Route::patch('/{intern_logbook}/approve', [InternLogbookController::class, 'approve'])->name('approve');
         Route::delete('/{intern_logbook}', [InternLogbookController::class, 'destroy'])->name('destroy');

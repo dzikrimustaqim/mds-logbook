@@ -33,11 +33,54 @@
                        value="{{ request('search') }}"
                        class="w-full pl-14 pr-4 py-3 border-4 border-mds-black font-bold text-mds-black placeholder:text-mds-gray-400 focus:outline-none focus:ring-4 focus:ring-mds-yellow-500">
             </div>
-            <select name="status" class="border-4 border-mds-black font-bold text-mds-black p-3 focus:outline-none focus:ring-4 focus:ring-mds-yellow-500">
-                <option value="">All Status</option>
-                <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
-                <option value="approved" {{ request('status') === 'approved' ? 'selected' : '' }}>Approved</option>
-            </select>
+            
+            <!-- Custom Neubrutalism Dropdown with Card Animation -->
+            <div class="relative">
+                <input type="hidden" name="status" id="statusInput" value="{{ request('status') }}">
+                <button type="button" 
+                        onclick="toggleStatusDropdown()"
+                        class="w-full md:w-auto border-4 border-mds-black font-black text-mds-black px-6 py-3 bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all flex items-center justify-between gap-4 min-w-[180px]">
+                    <span id="statusButtonText">
+                        @if(request('status') === 'pending')
+                            PENDING
+                        @elseif(request('status') === 'approved')
+                            APPROVED
+                        @else
+                            ALL STATUS
+                        @endif
+                    </span>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" class="w-5 h-5 transition-transform" id="statusDropdownIcon">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                    </svg>
+                </button>
+                
+                <!-- Dropdown Menu with Card Animation -->
+                <div id="statusDropdown" 
+                     class="hidden absolute top-full left-0 right-0 mt-2 z-50 space-y-2">
+                    <div class="status-card bg-white border-4 border-mds-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] overflow-hidden opacity-0 transform translate-y-[-20px] transition-all duration-300">
+                        <button type="button" 
+                                onclick="selectStatus('', 'ALL STATUS')"
+                                class="w-full text-left px-6 py-3 font-black text-mds-black hover:bg-mds-yellow-500 transition-colors border-b-4 border-mds-black {{ request('status') === null ? 'bg-mds-yellow-100' : '' }}">
+                            ALL STATUS
+                        </button>
+                    </div>
+                    <div class="status-card bg-white border-4 border-mds-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] overflow-hidden opacity-0 transform translate-y-[-20px] transition-all duration-300 delay-100">
+                        <button type="button" 
+                                onclick="selectStatus('pending', 'PENDING')"
+                                class="w-full text-left px-6 py-3 font-black text-mds-black hover:bg-mds-orange-500 hover:text-white transition-colors border-b-4 border-mds-black {{ request('status') === 'pending' ? 'bg-mds-orange-100' : '' }}">
+                            PENDING
+                        </button>
+                    </div>
+                    <div class="status-card bg-white border-4 border-mds-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] overflow-hidden opacity-0 transform translate-y-[-20px] transition-all duration-300 delay-200">
+                        <button type="button" 
+                                onclick="selectStatus('approved', 'APPROVED')"
+                                class="w-full text-left px-6 py-3 font-black text-mds-black hover:bg-mds-green-500 hover:text-white transition-colors {{ request('status') === 'approved' ? 'bg-mds-green-100' : '' }}">
+                            APPROVED
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
             <button type="submit" 
                     class="bg-mds-blue-500 text-white font-black border-4 border-mds-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] px-6 py-3 hover:bg-white hover:text-mds-blue-500 transition active:translate-x-1 active:translate-y-1 active:shadow-none whitespace-nowrap">
                 SEARCH
@@ -235,5 +278,91 @@
         color: #9ca3af;
         cursor: not-allowed;
     }
+
+    /* Card Animation */
+    .status-card {
+        animation: cardSlideIn 0.3s ease forwards;
+    }
+    
+    @keyframes cardSlideIn {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
 </style>
+
+<script>
+    // Status Dropdown Functions
+    function toggleStatusDropdown() {
+        const dropdown = document.getElementById('statusDropdown');
+        const icon = document.getElementById('statusDropdownIcon');
+        const cards = document.querySelectorAll('.status-card');
+        
+        const isHidden = dropdown.classList.contains('hidden');
+        
+        if (isHidden) {
+            dropdown.classList.remove('hidden');
+            setTimeout(() => {
+                cards.forEach((card, index) => {
+                    setTimeout(() => {
+                        card.style.opacity = '1';
+                        card.style.transform = 'translateY(0)';
+                    }, index * 100);
+                });
+            }, 10);
+        } else {
+            cards.forEach((card, index) => {
+                setTimeout(() => {
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateY(-20px)';
+                }, (cards.length - 1 - index) * 100);
+            });
+            setTimeout(() => {
+                dropdown.classList.add('hidden');
+            }, cards.length * 100);
+        }
+        
+        icon.classList.toggle('rotate-180');
+    }
+
+    function selectStatus(value, text) {
+        document.getElementById('statusInput').value = value;
+        document.getElementById('statusButtonText').textContent = text;
+        
+        // Reset and hide dropdown
+        const cards = document.querySelectorAll('.status-card');
+        cards.forEach(card => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(-20px)';
+        });
+        
+        setTimeout(() => {
+            document.getElementById('statusDropdown').classList.add('hidden');
+            document.getElementById('statusDropdownIcon').classList.remove('rotate-180');
+        }, 200);
+        
+        // Submit the form
+        document.querySelector('form').submit();
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        const dropdown = document.getElementById('statusDropdown');
+        const button = dropdown?.previousElementSibling;
+        
+        if (dropdown && !dropdown.contains(e.target) && e.target !== button && !button?.contains(e.target)) {
+            const cards = document.querySelectorAll('.status-card');
+            cards.forEach(card => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(-20px)';
+            });
+            
+            setTimeout(() => {
+                dropdown.classList.add('hidden');
+                document.getElementById('statusDropdownIcon')?.classList.remove('rotate-180');
+            }, 200);
+        }
+    });
+</script>
 @endsection

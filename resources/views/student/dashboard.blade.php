@@ -14,7 +14,7 @@
                 Hello, <span class="text-mds-yellow-500">{{ auth()->user()->name }}</span>
             </p>
             <p class="text-lg font-bold text-white mt-2 opacity-90">
-                {{ now()->format('l, d F Y') }} • {{ now()->format('H:i') }}
+                {{ now()->timezone('Asia/Jakarta')->format('l, d F Y') }} • {{ now()->timezone('Asia/Jakarta')->format('H:i') }} WIB
             </p>
         </div>
     </div>
