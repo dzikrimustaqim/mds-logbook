@@ -1,0 +1,32 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: mds-logbook-app:latest
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      - db
+
+  web:
+    image: nginx:stable-alpine
+    ports:
+      - "8080:80"
+    depends_on:
+      - app
+
+  db:
+    image: mysql:8.1
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: logbook
+      MYSQL_USER: mds
+      MYSQL_PASSWORD: mdspass
+    volumes:
+      - dbdata:/var/lib/mysql
+
+volumes:
+  dbdata:
+    driver: local
