@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('intern_logbooks', function (Blueprint $table) {
+        Schema::create('logbooks', function (Blueprint $table) {
             $table->id();
             
             // Foreign Key: Menghubungkan logbook ke user (Student)
@@ -36,6 +36,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('intern_logbooks');
+        Schema::dropIfExists('logbooks');
     }
 };

@@ -77,7 +77,7 @@
                             <div class="font-bold text-lg text-mds-black">{{ $student->name }}</div>
                         </td>
                         <td class="border-4 border-mds-black p-4">
-                            <span class="font-mono font-bold text-mds-blue-500">@{{ $student->username }}</span>
+                            <span class="font-mono font-bold text-mds-blue-500">{{ $student->username }}</span>
                         </td>
                         <td class="border-4 border-mds-black p-4">
                             <span class="font-bold text-mds-gray-700">{{ $student->email }}</span>

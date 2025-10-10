@@ -12,9 +12,9 @@ class InternLogbook extends Model
 
     /**
      * Nama tabel yang digunakan oleh model.
-     * Secara default, Laravel akan menggunakan 'intern_logbooks'.
+     * Secara default, Laravel akan menggunakan 'logbooks'.
      */
-    protected $table = 'intern_logbooks';
+    protected $table = 'logbooks';
 
     /**
      * Kolom yang dapat diisi secara massal (mass assignable).

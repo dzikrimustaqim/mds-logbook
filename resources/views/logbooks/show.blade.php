@@ -41,7 +41,7 @@
                 <div>
                     <label class="block text-mds-black font-black mb-2">Date</label>
                     <div class="bg-mds-gray-100 border-4 border-mds-black p-3 font-bold text-lg">
-                        {{ $logbook->date->format('d M Y') }}
+                        {{ $logbook->date?->format('d M Y') ?? '-' }}
                     </div>
                 </div>
             </div>
@@ -61,7 +61,7 @@
                 <div>
                     <label class="block text-mds-black font-black mb-2">Created At</label>
                     <div class="bg-mds-gray-100 border-4 border-mds-black p-3 font-bold text-mds-black">
-                        {{ $logbook->created_at->format('d M Y H:i:s') }}
+                        {{ $logbook->created_at?->format('d M Y H:i:s') ?? '-' }}
                     </div>
                 </div>
             </div>

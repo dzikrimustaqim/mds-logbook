@@ -20,7 +20,9 @@
 
     <!-- Search & Filter Section -->
     <div class="bg-white border-6 border-mds-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-4">
-        <form method="GET" action="{{ route('admin.logbooks.index') }}" class="flex flex-col md:flex-row gap-3">
+        <form id="filterForm" method="GET" action="{{ route('admin.logbooks.index') }}" class="flex flex-col md:flex-row gap-3">
+
+            <!-- Search Input -->
             <div class="flex-1 relative">
                 <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6 text-mds-gray-400">
@@ -28,18 +30,18 @@
                     </svg>
                 </div>
                 <input type="text" 
-                       name="search" 
-                       placeholder="Search by title, activity, or student name..." 
-                       value="{{ request('search') }}"
-                       class="w-full pl-14 pr-4 py-3 border-4 border-mds-black font-bold text-mds-black placeholder:text-mds-gray-400 focus:outline-none focus:ring-4 focus:ring-mds-yellow-500">
+                    name="search" 
+                    placeholder="Search by title, activity, or student name..." 
+                    value="{{ request('search') }}"
+                    class="w-full pl-14 pr-4 py-3 border-4 border-mds-black font-bold text-mds-black placeholder:text-mds-gray-400 focus:outline-none focus:ring-4 focus:ring-mds-yellow-500">
             </div>
-            
-            <!-- Custom Neubrutalism Dropdown with Card Animation -->
+
+            <!-- Filter Dropdown -->
             <div class="relative">
                 <input type="hidden" name="status" id="statusInput" value="{{ request('status') }}">
                 <button type="button" 
                         onclick="toggleStatusDropdown()"
-                        class="w-full md:w-auto border-4 border-mds-black font-black text-mds-black px-6 py-3 bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all flex items-center justify-between gap-4 min-w-[180px]">
+                        class="w-full md:w-auto border-4 border-mds-black font-black text-mds-black px-6 py-3 bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center justify-between gap-4 min-w-[180px]">
                     <span id="statusButtonText">
                         @if(request('status') === 'pending')
                             PENDING
@@ -53,46 +55,33 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
                     </svg>
                 </button>
-                
-                <!-- Dropdown Menu with Card Animation -->
-                <div id="statusDropdown" 
-                     class="hidden absolute top-full left-0 right-0 mt-2 z-50 space-y-2">
-                    <div class="status-card bg-white border-4 border-mds-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] overflow-hidden opacity-0 transform translate-y-[-20px] transition-all duration-300">
-                        <button type="button" 
-                                onclick="selectStatus('', 'ALL STATUS')"
-                                class="w-full text-left px-6 py-3 font-black text-mds-black hover:bg-mds-yellow-500 transition-colors border-b-4 border-mds-black {{ request('status') === null ? 'bg-mds-yellow-100' : '' }}">
-                            ALL STATUS
-                        </button>
-                    </div>
-                    <div class="status-card bg-white border-4 border-mds-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] overflow-hidden opacity-0 transform translate-y-[-20px] transition-all duration-300 delay-100">
-                        <button type="button" 
-                                onclick="selectStatus('pending', 'PENDING')"
-                                class="w-full text-left px-6 py-3 font-black text-mds-black hover:bg-mds-orange-500 hover:text-white transition-colors border-b-4 border-mds-black {{ request('status') === 'pending' ? 'bg-mds-orange-100' : '' }}">
-                            PENDING
-                        </button>
-                    </div>
-                    <div class="status-card bg-white border-4 border-mds-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] overflow-hidden opacity-0 transform translate-y-[-20px] transition-all duration-300 delay-200">
-                        <button type="button" 
-                                onclick="selectStatus('approved', 'APPROVED')"
-                                class="w-full text-left px-6 py-3 font-black text-mds-black hover:bg-mds-green-500 hover:text-white transition-colors {{ request('status') === 'approved' ? 'bg-mds-green-100' : '' }}">
-                            APPROVED
-                        </button>
-                    </div>
+
+                <div id="statusDropdown" class="hidden absolute top-full left-0 right-0 mt-2 z-50 space-y-2">
+                    @foreach(['' => 'ALL STATUS', 'pending' => 'PENDING', 'approved' => 'APPROVED'] as $value => $label)
+                        <div class="status-card bg-white border-4 border-mds-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+                            <button type="button" onclick="selectStatus('{{ $value }}', '{{ $label }}')" class="w-full px-6 py-3 font-black text-left text-mds-black">
+                                {{ $label }}
+                            </button>
+                        </div>
+                    @endforeach
                 </div>
             </div>
-            
+
+            <!-- Buttons -->
             <button type="submit" 
-                    class="bg-mds-blue-500 text-white font-black border-4 border-mds-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] px-6 py-3 hover:bg-white hover:text-mds-blue-500 transition active:translate-x-1 active:translate-y-1 active:shadow-none whitespace-nowrap">
+                    class="bg-mds-blue-500 text-white font-black border-4 border-mds-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] px-6 py-3 hover:bg-white hover:text-mds-blue-500 transition">
                 SEARCH
             </button>
+
             @if(request('search') || request('status'))
             <a href="{{ route('admin.logbooks.index') }}" 
-               class="bg-red-500 text-white font-black border-4 border-mds-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] px-6 py-3 hover:bg-white hover:text-red-500 transition active:translate-x-1 active:translate-y-1 active:shadow-none whitespace-nowrap text-center">
+            class="bg-red-500 text-white font-black border-4 border-mds-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] px-6 py-3 hover:bg-white hover:text-red-500 transition text-center">
                 CLEAR
             </a>
             @endif
         </form>
     </div>
+
 
     <!-- Table Section -->
     <div class="bg-white border-6 border-mds-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden">
@@ -131,9 +120,6 @@
                         <td class="border-4 border-mds-black p-4">
                             <div class="font-bold text-mds-black">
                                 {{ $logbook->user->name }}
-                            </div>
-                            <div class="text-sm text-mds-gray-600 font-mono">
-                                @{{ $logbook->user->username }}
                             </div>
                         </td>
                         <td class="border-4 border-mds-black p-4">
@@ -329,22 +315,15 @@
     function selectStatus(value, text) {
         document.getElementById('statusInput').value = value;
         document.getElementById('statusButtonText').textContent = text;
-        
-        // Reset and hide dropdown
-        const cards = document.querySelectorAll('.status-card');
-        cards.forEach(card => {
-            card.style.opacity = '0';
-            card.style.transform = 'translateY(-20px)';
-        });
-        
-        setTimeout(() => {
-            document.getElementById('statusDropdown').classList.add('hidden');
-            document.getElementById('statusDropdownIcon').classList.remove('rotate-180');
-        }, 200);
-        
-        // Submit the form
-        document.querySelector('form').submit();
+
+        // Tutup dropdown
+        document.getElementById('statusDropdown').classList.add('hidden');
+        document.getElementById('statusDropdownIcon').classList.remove('rotate-180');
+
+        // Submit form spesifik (bukan form lain!)
+        document.getElementById('filterForm').submit();
     }
+
 
     // Close dropdown when clicking outside
     document.addEventListener('click', function(e) {

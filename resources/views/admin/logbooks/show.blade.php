@@ -50,7 +50,6 @@
                     <label class="block text-mds-black font-black mb-2">Student</label>
                     <div class="bg-mds-gray-100 border-4 border-mds-black p-3 font-bold text-lg">
                         {{ $logbook->user?->name ?? 'No user' }}
-                        <span class="text-mds-blue-500 font-mono">@{{ $logbook->user?->username ?? 'No username' }}</span>
                     </div>
                 </div>
                 <div>
@@ -63,7 +62,7 @@
                         }} border-4 border-mds-black">
                             {{ $logbook->is_approved ? 'APPROVED' : 'PENDING' }}
                         </span>
-                        <form action="{{ route('admin.logbooks.approve', ['intern_logbook' => $logbook->id]) }}" method="POST" class="inline">
+                        <form action="{{ route('admin.logbooks.approve', ['logbook' => $logbook->id]) }}" method="POST" class="inline">
                             @csrf
                             @method('PATCH')
                             <button type="submit"

@@ -52,10 +52,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::resource('users', UserController::class);
 
     Route::prefix('logbooks')->name('logbooks.')->group(function () {
-        Route::get('/', [InternLogbookController::class, 'indexAdmin'])->name('index');
-        Route::get('/{intern_logbook}', [InternLogbookController::class, 'show'])->name('show');
-        Route::patch('/{intern_logbook}/approve', [InternLogbookController::class, 'approve'])->name('approve');
-        Route::delete('/{intern_logbook}', [InternLogbookController::class, 'destroy'])->name('destroy');
+        Route::get('/', [InternLogbookController::class, 'index'])->name('index');
+        Route::get('/{logbook}', [InternLogbookController::class, 'show'])->name('show');
+        Route::patch('/{logbook}/approve', [InternLogbookController::class, 'approve'])->name('approve');
+        Route::delete('/{logbook}', [InternLogbookController::class, 'destroy'])->name('destroy');
     });
 });
 
