@@ -33,9 +33,9 @@ Notes:
 - MySQL is preconfigured with database `logbook`, user `mds`, password `mdspass` and root password `root` on port 3306.
 - The Dockerfile uses PHP 8.3 FPM and installs common extensions required by Laravel. Composer binary is copied from the official Composer image.
 
-## Summary of changes I made
+## Summary of changes
 
-I prepared a minimal but practical Docker environment and fixed issues encountered while running the app:
+Prepared a minimal but practical Docker environment and fixed issues encountered while running the app:
 
 - Created `Dockerfile` using `php:8.3-fpm` with required PHP extensions and Composer.
 - Added `docker-entrypoint.sh` that waits for database, runs `composer install` inside container if `vendor` missing, sets permissions for `storage` and `bootstrap/cache`, generates APP_KEY (non-production) and runs migrations (non-production).
@@ -78,13 +78,6 @@ docker compose exec app php artisan migrate --force
 - Consider multi-stage Docker build to bake in `composer install` and `npm run build` so the VPS doesn't need Node at runtime.
 - Configure log shipping or monitoring (Sentry for exceptions, Prometheus/Grafana for metrics).
 
-## Next improvements I can make (pick any)
-
-- Move frontend build into Docker multi-stage build (image contains built assets) — better for production.
-- Add MailHog or a real SMTP config example.
-- Add a simple `Makefile` with `make up`, `make build-assets`, `make deploy` shortcuts.
-- Add healthchecks and restart policies per service and a small `watch` for archives.
-
 # Docker setup for mds-logbook
 
 This repository includes a minimal Docker setup to run the Laravel application with MySQL and Nginx.
@@ -117,7 +110,3 @@ Notes:
 - MySQL is preconfigured with database `logbook`, user `mds`, password `mdspass` and root password `root` on port 3306.
 - The Dockerfile uses PHP 8.2 FPM and installs common extensions required by Laravel. Composer binary is copied from the official Composer image.
 - For production use, you should harden credentials, set APP_KEY, disable APP_DEBUG and tune PHP and Nginx settings.
-
-If you'd like, I can:
-- Wire up a Dockerfile step that runs `composer install` inside the image and builds assets.
-- Add a named `.env` override or a makefile/task to simplify developer experience.
