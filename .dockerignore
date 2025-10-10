@@ -1,0 +1,13 @@
+.git
+.github
+.env
+.env.*
+vendor
+node_modules
+storage/*.key
+storage/framework/cache/data
+storage/framework/sessions
+storage/framework/views
+storage/logs
+docker-compose.yml
+docker
