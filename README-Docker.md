@@ -85,11 +85,6 @@ docker compose exec app php artisan migrate --force
 - Add a simple `Makefile` with `make up`, `make build-assets`, `make deploy` shortcuts.
 - Add healthchecks and restart policies per service and a small `watch` for archives.
 
-If you want, I can implement any of the above and run one final verification on your environment.
-
----
-
-If everything sudah aman, beri tahu fitur mana yang mau saya lanjutkan (multi-stage build, Makefile, Traefik, atau lainnya). Saya akan teruskan dan implementasikan.
 # Docker setup for mds-logbook
 
 This repository includes a minimal Docker setup to run the Laravel application with MySQL and Nginx.
