@@ -65,6 +65,9 @@ RUN chown -R www-data:www-data /var/www/html \
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
+# >>> EDIT file bawaan FPM: pastikan ENV tidak dihapus (tanpa menambah file baru)
+RUN sed -ri 's/^[;# ]*clear_env\s*=.*/clear_env = no/' /usr/local/etc/php-fpm.d/www.conf
+
 EXPOSE 9000
 USER www-data
 CMD ["docker-entrypoint.sh"]

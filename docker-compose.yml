@@ -9,10 +9,10 @@ services:
     working_dir: /var/www/html
     volumes:
       - ./:/var/www/html:delegated
-      # Exclude problematic directories for better performance and avoid cache conflicts
       - /var/www/html/node_modules
       - /var/www/html/vendor
       - bootstrap_cache:/var/www/html/bootstrap/cache
+      - storage_data:/var/www/html/storage
     environment:
       - COMPOSER_CACHE_DIR=/tmp/composer-cache
       - APP_SERVICES_CACHE=/var/www/html/bootstrap/cache/services.php
@@ -21,12 +21,11 @@ services:
         condition: service_healthy
     networks:
       - mds_network
-    # Simplified health check
     healthcheck:
-      test: ["CMD-SHELL", "test -f /var/www/html/.env && grep -q 'APP_KEY=base64:' /var/www/html/.env"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 9000"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
       start_period: 60s
 
   web:
@@ -52,11 +51,11 @@ services:
   node:
     image: node:20-bullseye
     container_name: mds_logbook_node
-    working_dir: /var/www/html
+    working_dir: /mds-logbook
     volumes:
-      - ./:/var/www/html
-      - node_modules:/var/www/html/node_modules
-    command: ["sh", "-c", "npm install --silent && npm run build && echo 'Frontend build completed' && tail -f /dev/null"]
+      - ./:/mds-logbook
+      - node_modules:/mds-logbook/node_modules
+    command: ["sh", "-c", "npm ci --silent && npm run build && echo 'Frontend build completed' && tail -f /dev/null"]
     environment:
       - NODE_ENV=development
       - CHOKIDAR_USEPOLLING=true
@@ -77,7 +76,7 @@ services:
     volumes:
       - dbdata:/var/lib/mysql
     ports:
-      - "3306:3306"
+      - "13306:3306"
     networks:
       - mds_network
     healthcheck:
@@ -93,6 +92,8 @@ volumes:
   node_modules:
     driver: local
   bootstrap_cache:
+    driver: local
+  storage_data:
     driver: local
 
 networks:
