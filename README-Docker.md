@@ -1,82 +1,305 @@
-# Docker setup for mds-logbook
+# MDS Logbook - Docker Setup
 
-This repository includes a minimal but practical Docker setup to run the Laravel application with MySQL and Nginx. The repository currently uses a multi-stage Dockerfile that builds frontend assets and PHP dependencies into the final image (so production does not need Node or Composer at runtime).
-Overview of what is included
+Dokumentasi lengkap untuk menjalankan aplikasi MDS Logbook menggunakan Docker.
 
-- `Dockerfile` — multi-stage: `node_builder` (build Vite assets), `composer_builder` (install vendor without running project scripts), final `php:8.3-fpm` stage that copies `vendor` and `public/build`.
-- `docker-entrypoint.sh` — waits for DB, runs `composer install` when `vendor` missing (useful for local mounted volumes), sets permissions, runs migrations/key generation in non-production, then starts php-fpm.
-- `docker-compose.yml` — defines services: `app` (php-fpm), `web` (nginx), `db` (mysql:8.1) and `node` (container you can use to build assets or run Vite dev server).
-- `docker/nginx/default.conf` — nginx config serving `public` and proxying PHP to `app:9000`.
-- `.env.docker` — example environment file for local development. Use `cp .env.docker .env` to create your working `.env` (do not commit `.env`).
+## 📦 Komponen Docker
 
-Ports and runtime
+- **Dockerfile** - Multi-stage build dengan PHP 8.3-FPM, Node.js untuk asset building
+- **docker-compose.yml** - Orchestrasi 4 services: app, web, db, dan node
+- **docker-entrypoint.sh** - Automation untuk setup Laravel (migrations, permissions, dll)
+- **docker/nginx/default.conf** - Konfigurasi Nginx untuk serve Laravel
+- **.env.docker** - Template environment variables
 
-- The web server is exposed on http://localhost:18080 and serves the Laravel `public` folder (host -> container: `18080:80`).
-- MySQL is exposed on port `3306` (host -> container: `3306:3306`) — change as needed for your environment.
+## 🚀 Quick Start (Development)
 
-Quick start (Windows PowerShell)
+### Prasyarat
+- Docker & Docker Compose terinstall
+- Git untuk clone repository
 
-1) Create a local `.env` from the included template (only for local dev):
+### Langkah Setup
 
-```powershell
+```bash
+# 1. Clone repository
+git clone https://github.com/yourusername/mds-logbook.git
+cd mds-logbook
+
+# 2. Copy environment file
 cp .env.docker .env
+
+# 3. Start Docker containers
+docker-compose up -d
+
+# 4. Akses aplikasi
+# Browser: http://localhost:18080
 ```
-2) Build and start the stack (development):
 
-```powershell
-# build images (multi-stage will bake in vendor and built assets for production-ready image)
-docker compose up --build -d
+### Perintah Umum
 
-# build frontend assets (if you prefer to do it manually via the node service)
-docker compose run --rm node sh -lc "npm ci --silent && npm run build --silent"
+```bash
+# Melihat status containers
+docker-compose ps
 
-# view web logs
-docker compose logs -f web
+# Melihat logs
+docker-compose logs -f app
+docker-compose logs -f web
 
-# stop and remove containers
-docker compose down
+# Restart services
+docker-compose restart
+
+# Stop containers
+docker-compose down
+
+# Rebuild containers
+docker-compose up --build -d
 ```
-Development workflows
 
-- Static-build workflow (fast for serving static built assets): run the `node` build command above once after code changes that touch JS/CSS. That produces `public/build/manifest.json` and assets that Nginx will serve.
-- Hot-reload workflow: run the Vite dev server inside the node container:
+## 🏗️ Arsitektur Services
 
-```powershell
-docker compose exec node bash -lc "npm run dev -- --host 0.0.0.0"
 ```
-then open http://localhost:18080 in the browser. Laravel will detect the Vite dev server and load assets from it.
+┌──────────────────────────────────────┐
+│  Browser: http://localhost:18080    │
+└──────────────┬───────────────────────┘
+               │
+┌──────────────▼───────────────────────┐
+│  web (Nginx:stable-alpine)           │
+│  Port: 18080:80                      │
+└──────────────┬───────────────────────┘
+               │
+┌──────────────▼───────────────────────┐
+│  app (PHP 8.3-FPM)                   │
+│  Laravel Application                 │
+└──────────────┬───────────────────────┘
+               │
+┌──────────────▼───────────────────────┐
+│  db (MySQL 8.1)                      │
+│  Port: 13306:3306                    │
+│  Database: logbook                   │
+└──────────────────────────────────────┘
 
-Notes about entrypoint and mounted volumes
+┌──────────────────────────────────────┐
+│  node (Node 20-bullseye)             │
+│  Build Vite assets                   │
+└──────────────────────────────────────┘
+```
 
-- The image includes a `docker-entrypoint.sh` which will attempt to run `composer install` if `vendor/autoload.php` is missing. This is helpful when you mount your project source as a volume in `app` (development mode) because the image's baked `vendor` directory is not used in that case. If you prefer the image to always contain `vendor`, avoid mounting the whole project into the `app` container in production.
-- In the final image composer binary is present so entrypoint can run composer for mounted volumes.
+## 🔧 Konfigurasi
 
-Production / VPS deployment suggestions
+### Database
+- **Host**: db (dalam Docker network) / localhost:13306 (dari host)
+- **Database**: logbook
+- **Username**: mds
+- **Password**: mdspass
+- **Root Password**: root
 
-- Use the `docker-compose.yml` or create a `docker-compose.prod.yml` that references the built image (or build on the VPS) — the multi-stage Dockerfile already copies built assets and vendor into the final image, so Node is not required on the host for runtime.
-- Ensure `.env` with production values exists on the VPS (do NOT commit `.env` in git). Generate and set `APP_KEY`, set `APP_ENV=production`, `APP_DEBUG=false` and correct `APP_URL`.
-- Use a reverse proxy (Traefik or Nginx) with TLS in front of the containers for production. Consider automated backups for MySQL.
+### Ports
+- **Web**: 18080 (HTTP)
+- **MySQL**: 13306 (external access)
 
-Troubleshooting
+### Volumes (Persistent Data)
+- `dbdata` - MySQL database
+- `node_modules` - NPM packages
+- `bootstrap_cache` - Laravel cache
+- `storage_data` - Laravel storage
 
-- 502 Bad Gateway from nginx: usually means the `app` (php-fpm) is not ready yet — check `docker compose logs app` and `docker compose logs web`.
-- Vite manifest missing: run the node build command to create `public/build/manifest.json` or ensure the multi-stage build included it in the image.
-- Composer/network errors: ensure the host has network access to packagist.org; you can run composer commands inside the `app` container via `docker compose exec app composer ...`.
+## 📝 Development Workflow
 
-If you'd like, I can also:
+### Update Frontend Assets
 
-- Add a small `Makefile` with targets like `make up`, `make down`, `make assets` and `make build-prod`.
-- Add a CI workflow to build and push the multi-stage image to a registry.
+```bash
+# Setelah mengubah CSS/JS
+docker-compose exec node npm run build
+```
 
----
+### Run Migrations
 
-Current repo status notes (automatically generated):
-- PHP base image: `php:8.3-fpm`.
-- Node for builds: `node:20-bullseye`.
-- MySQL: `mysql:8.1` with DB `logbook` / user `mds` / password `mdspass` (see `.env.docker`).
-- Host web port: `18080`.
+```bash
+docker-compose exec app php artisan migrate
+```
 
-Please tell me if Anda ingin saya commit & push README ini ke `origin/main` (saya akan commit hanya file README-Docker.md).
+### Run Seeders
+
+```bash
+docker-compose exec app php artisan db:seed
+```
+
+### Access Container Shell
+
+```bash
+# PHP container
+docker-compose exec app bash
+
+# Node container  
+docker-compose exec node bash
+
+# MySQL container
+docker-compose exec db bash
+```
+
+## 🌐 Production / VPS Deployment
+
+### 1. Setup Docker di VPS
+
+```bash
+# Update system
+sudo apt update && sudo apt upgrade -y
+
+# Install Docker
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+
+# Install Docker Compose
+sudo apt install docker-compose-plugin -y
+
+# Verify installation
+docker --version
+docker compose version
+```
+
+### 2. Deploy Aplikasi
+
+```bash
+# Clone repository
+git clone https://github.com/yourusername/mds-logbook.git
+cd mds-logbook
+
+# Setup environment
+cp .env.docker .env
+nano .env  # Edit untuk production values
+
+# Update konfigurasi production:
+# - APP_ENV=production
+# - APP_DEBUG=false
+# - APP_URL=https://your-domain.com
+# - Generate APP_KEY: base64:...
+# - Update database credentials jika perlu
+
+# Start containers
+docker-compose up -d
+
+# Check status
+docker-compose ps
+docker-compose logs -f
+```
+
+### 3. Setup Domain & SSL
+
+Untuk production dengan domain, gunakan Nginx reverse proxy di host dengan Certbot untuk SSL:
+
+```bash
+# Install Nginx di host
+sudo apt install nginx certbot python3-certbot-nginx -y
+
+# Konfigurasi proxy pass (lihat nginx-proxy.conf)
+sudo nano /etc/nginx/sites-available/your-domain
+
+# Enable site
+sudo ln -s /etc/nginx/sites-available/your-domain /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+
+# Request SSL certificate
+sudo certbot --nginx -d your-domain.com
+```
+
+**Alternatif**: Gunakan Cloudflare dengan Flexible SSL mode untuk SSL termination.
+
+### 4. Update Aplikasi (Production)
+
+```bash
+# Pull latest code
+git pull origin main
+
+# Rebuild containers jika ada perubahan Dockerfile
+docker-compose up --build -d
+
+# Atau hanya restart jika perubahan code saja
+docker-compose restart app
+```
+
+## 🐛 Troubleshooting
+
+### Container Gagal Start
+
+```bash
+# Cek logs detail
+docker-compose logs app
+docker-compose logs db
+
+# Cek status health check
+docker-compose ps
+```
+
+### Permission Errors
+
+```bash
+# Fix permission di VPS
+sudo chown -R 33:33 storage/ bootstrap/cache/
+sudo chmod -R 775 storage/ bootstrap/cache/
+```
+
+### Database Connection Error
+
+```bash
+# Pastikan database container healthy
+docker-compose ps db
+
+# Test koneksi dari app container
+docker-compose exec app nc -zv db 3306
+```
+
+### Frontend Assets Missing
+
+```bash
+# Rebuild assets
+docker-compose exec node npm run build
+
+# Verify build output
+docker-compose exec app ls -la public/build/
+```
+
+### Port Already in Use
+
+```bash
+# Cek port yang digunakan
+sudo netstat -tulpn | grep :18080
+sudo netstat -tulpn | grep :13306
+
+# Stop service yang konflik atau ubah port di docker-compose.yml
+```
+
+## 📚 File Penting
+
+### Dockerfile
+Multi-stage build yang menghasilkan production-ready image:
+1. **node_builder** - Build Vite assets
+2. **composer_builder** - Install PHP dependencies
+3. **Final stage** - PHP-FPM dengan semua dependencies
+
+### docker-entrypoint.sh
+Automation script yang:
+- Menunggu database ready
+- Install/update dependencies
+- Set permissions
+- Generate APP_KEY (non-production)
+- Run migrations (non-production)
+
+### docker-compose.yml
+Definisi 4 services dengan health checks dan volume persistence.
+
+## 🔒 Security Notes
+
+- **JANGAN commit `.env`** ke repository
+- Gunakan strong passwords untuk production
+- Set `APP_DEBUG=false` di production
+- Gunakan HTTPS/SSL untuk production
+- Backup database secara regular
+- Update Docker images secara berkala
+
+## 📞 Support
+
+Untuk issues dan pertanyaan:
+- GitHub Issues: [Repository Issues](https://github.com/yourusername/mds-logbook/issues)
+- Documentation: [README.md](README.md)
 # Docker setup for mds-logbook
 
 This repository includes a minimal Docker setup to run the Laravel application with MySQL and Nginx.
