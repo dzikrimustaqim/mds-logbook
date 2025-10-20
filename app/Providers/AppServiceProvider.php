@@ -19,6 +19,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Force HTTPS URLs when behind SSL proxy
+        if (request()->header('X-Forwarded-Proto') === 'https') {
+            \URL::forceScheme('https');
+        }
     }
 }
