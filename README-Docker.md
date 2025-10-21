@@ -1,218 +1,433 @@
-# MDS Logbook - Docker Setup
+````markdown# MDS Logbook - Docker Setup
+
+# MDS Logbook Docker Setup
 
 Dokumentasi lengkap untuk menjalankan aplikasi MDS Logbook menggunakan Docker.
 
+Simplified Docker configuration untuk aplikasi MDS Logbook Laravel.
+
 ## 📦 Komponen Docker
 
+## 📁 Struktur File
+
 - **Dockerfile** - Multi-stage build dengan PHP 8.3-FPM, Node.js untuk asset building
-- **docker-compose.yml** - Orchestrasi 4 services: app, web, db, dan node
-- **docker-entrypoint.sh** - Automation untuk setup Laravel (migrations, permissions, dll)
-- **docker/nginx/default.conf** - Konfigurasi Nginx untuk serve Laravel
-- **.env.docker** - Template environment variables
 
-## 🚀 Quick Start (Development)
+```- **docker-compose.yml** - Orchestrasi 4 services: app, web, db, dan node
 
-### Prasyarat
-- Docker & Docker Compose terinstall
-- Git untuk clone repository
+mds-logbook/- **docker-entrypoint.sh** - Automation untuk setup Laravel (migrations, permissions, dll)
 
-### Langkah Setup
+├── Dockerfile              # Docker image configuration- **docker/nginx/default.conf** - Konfigurasi Nginx untuk serve Laravel
 
-```bash
-# 1. Clone repository
-git clone https://github.com/yourusername/mds-logbook.git
-cd mds-logbook
+├── docker-compose.yml      # Container orchestration- **.env.docker** - Template environment variables
 
-# 2. Copy environment file
-cp .env.docker .env
+├── docker-entrypoint.sh    # Initialization script
 
-# 3. Start Docker containers
-docker-compose up -d
+├── .env.docker             # Environment template## 🚀 Quick Start (Development)
 
-# 4. Akses aplikasi
-# Browser: http://localhost:18080
+└── docker/
+
+    └── nginx/### Prasyarat
+
+        └── default.conf    # Nginx configuration- Docker & Docker Compose terinstall
+
+```- Git untuk clone repository
+
+
+
+## 🚀 Quick Start### Langkah Setup
+
+
+
+### 1. Setup Environment```bash
+
+```bash# 1. Clone repository
+
+# Copy environment templategit clone https://github.com/yourusername/mds-logbook.git
+
+cp .env.docker .envcd mds-logbook
+
+
+
+# Edit .env jika perlu (APP_KEY akan di-generate otomatis)# 2. Copy environment file
+
+```cp .env.docker .env
+
+
+
+### 2. Deploy# 3. Start Docker containers
+
+```bashdocker-compose up -d
+
+# Satu perintah untuk build dan start
+
+docker-compose up -d# 4. Akses aplikasi
+
+```# Browser: http://localhost:18080
+
 ```
 
-### Perintah Umum
+Selesai! Aplikasi akan:
+
+- Build Docker image### Perintah Umum
+
+- Start containers (app + nginx)
+
+- Generate APP_KEY otomatis```bash
+
+- Run database migrations# Melihat status containers
+
+- Optimize untuk productiondocker-compose ps
+
+
+
+### 3. Access Application# Melihat logs
+
+- **Web**: http://localhost:18080docker-compose logs -f app
+
+- **Health Check**: http://localhost:18080/healthdocker-compose logs -f web
+
+
+
+### 4. Deploy dengan Database (Optional)# Restart services
+
+Jika ingin menggunakan MySQL container (bukan external database):docker-compose restart
 
 ```bash
-# Melihat status containers
-docker-compose ps
 
-# Melihat logs
-docker-compose logs -f app
-docker-compose logs -f web
+# Start dengan database profile# Stop containers
 
-# Restart services
-docker-compose restart
+docker-compose --profile db up -ddocker-compose down
 
-# Stop containers
-docker-compose down
+```
 
 # Rebuild containers
-docker-compose up --build -d
-```
 
-## 🏗️ Arsitektur Services
+## 📋 Common Commandsdocker-compose up --build -d
 
 ```
-┌──────────────────────────────────────┐
-│  Browser: http://localhost:18080    │
-└──────────────┬───────────────────────┘
-               │
-┌──────────────▼───────────────────────┐
-│  web (Nginx:stable-alpine)           │
-│  Port: 18080:80                      │
-└──────────────┬───────────────────────┘
-               │
-┌──────────────▼───────────────────────┐
-│  app (PHP 8.3-FPM)                   │
-│  Laravel Application                 │
-└──────────────┬───────────────────────┘
-               │
-┌──────────────▼───────────────────────┐
-│  db (MySQL 8.1)                      │
-│  Port: 13306:3306                    │
-│  Database: logbook                   │
-└──────────────────────────────────────┘
-
-┌──────────────────────────────────────┐
-│  node (Node 20-bullseye)             │
-│  Build Vite assets                   │
-└──────────────────────────────────────┘
-```
-
-## 🔧 Konfigurasi
-
-### Database
-- **Host**: db (dalam Docker network) / localhost:13306 (dari host)
-- **Database**: logbook
-- **Username**: mds
-- **Password**: mdspass
-- **Root Password**: root
-
-### Ports
-- **Web**: 18080 (HTTP)
-- **MySQL**: 13306 (external access)
-
-### Volumes (Persistent Data)
-- `dbdata` - MySQL database
-- `node_modules` - NPM packages
-- `bootstrap_cache` - Laravel cache
-- `storage_data` - Laravel storage
-
-## 📝 Development Workflow
-
-### Update Frontend Assets
 
 ```bash
-# Setelah mengubah CSS/JS
-docker-compose exec node npm run build
+
+# Start containers## 🏗️ Arsitektur Services
+
+docker-compose up -d
+
 ```
+
+# Stop containers┌──────────────────────────────────────┐
+
+docker-compose down│  Browser: http://localhost:18080    │
+
+└──────────────┬───────────────────────┘
+
+# View logs               │
+
+docker-compose logs -f app┌──────────────▼───────────────────────┐
+
+│  web (Nginx:stable-alpine)           │
+
+# Restart│  Port: 18080:80                      │
+
+docker-compose restart└──────────────┬───────────────────────┘
+
+               │
+
+# Rebuild┌──────────────▼───────────────────────┐
+
+docker-compose up -d --build│  app (PHP 8.3-FPM)                   │
+
+│  Laravel Application                 │
+
+# Clean everything (including volumes)└──────────────┬───────────────────────┘
+
+docker-compose down --rmi all -v               │
+
+```┌──────────────▼───────────────────────┐
+
+│  db (MySQL 8.1)                      │
+
+## 🔧 Environment Variables│  Port: 13306:3306                    │
+
+│  Database: logbook                   │
+
+Edit file `.env` untuk konfigurasi:└──────────────────────────────────────┘
+
+
+
+```env┌──────────────────────────────────────┐
+
+APP_PORT=18080              # Application port│  node (Node 20-bullseye)             │
+
+DB_HOST=db                  # Database host (atau external host)│  Build Vite assets                   │
+
+DB_PORT_INTERNAL=3306       # Database port internal└──────────────────────────────────────┘
+
+DB_DATABASE=mds_logbook_db  # Database name```
+
+DB_USERNAME=mds_user        # Database user
+
+DB_PASSWORD=mds_secure_2025 # Database password## 🔧 Konfigurasi
+
+DB_ROOT_PASSWORD=root_secure_2025  # MySQL root password
+
+```### Database
+
+- **Host**: db (dalam Docker network) / localhost:13306 (dari host)
+
+## 📊 Container Info- **Database**: logbook
+
+- **Username**: mds
+
+| Container | Service | Port | Description |- **Password**: mdspass
+
+|-----------|---------|------|-------------|- **Root Password**: root
+
+| mds_logbook_app | PHP-FPM 8.3 Alpine | - | Laravel application |
+
+| mds_logbook_nginx | Nginx 1.27 Alpine | 18080 | Web server |### Ports
+
+| mds_logbook_db | MySQL 8.0 | - | Database (optional, with --profile db) |- **Web**: 18080 (HTTP)
+
+- **MySQL**: 13306 (external access)
+
+## 💾 Data Persistence
+
+### Volumes (Persistent Data)
+
+Data berikut disimpan secara permanen:- `dbdata` - MySQL database
+
+- **mds_mysql_data**: Database MySQL (Docker volume, jika menggunakan profile db)- `node_modules` - NPM packages
+
+- **./storage**: File uploads dan logs (bind mount)- `bootstrap_cache` - Laravel cache
+
+- **./bootstrap/cache**: Laravel bootstrap cache (bind mount)- `storage_data` - Laravel storage
+
+
+
+## ⚙️ What Happens on Startup## 📝 Development Workflow
+
+
+
+1. Wait for database connection### Update Frontend Assets
+
+2. Generate APP_KEY (jika belum ada)
+
+3. Run database migrations```bash
+
+4. Cache configs, routes, views# Setelah mengubah CSS/JS
+
+5. Create storage symlinkdocker-compose exec node npm run build
+
+6. Fix permissions```
+
+7. Start PHP-FPM
 
 ### Run Migrations
 
+## 🔍 Troubleshooting
+
 ```bash
-docker-compose exec app php artisan migrate
+
+### Container tidak startdocker-compose exec app php artisan migrate
+
+```bash```
+
+docker-compose logs app
+
+docker-compose logs nginx### Run Seeders
+
 ```
 
-### Run Seeders
-
 ```bash
-docker-compose exec app php artisan db:seed
-```
 
-### Access Container Shell
+### Reset semuadocker-compose exec app php artisan db:seed
 
-```bash
+```bash```
+
+docker-compose down --rmi all -v
+
+cp .env.docker .env### Access Container Shell
+
+docker-compose up -d
+
+``````bash
+
 # PHP container
-docker-compose exec app bash
 
-# Node container  
-docker-compose exec node bash
+### Access container shelldocker-compose exec app bash
 
-# MySQL container
-docker-compose exec db bash
+```bash
+
+docker-compose exec app sh# Node container  
+
+```docker-compose exec node bash
+
+
+
+### Run artisan commands# MySQL container
+
+```bashdocker-compose exec db bash
+
+docker-compose exec app php artisan migrate```
+
+docker-compose exec app php artisan cache:clear
+
+docker-compose exec app php artisan config:clear## 🌐 Production / VPS Deployment
+
 ```
-
-## 🌐 Production / VPS Deployment
 
 ### 1. Setup Docker di VPS
 
-```bash
-# Update system
-sudo apt update && sudo apt upgrade -y
+### Database connection issues
+
+Jika menggunakan external database, pastikan:```bash
+
+- Database sudah running# Update system
+
+- DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD benarsudo apt update && sudo apt upgrade -y
+
+- Database user memiliki akses dari Docker network
 
 # Install Docker
-curl -fsSL https://get.docker.com -o get-docker.sh
+
+## 🏗️ Architecturecurl -fsSL https://get.docker.com -o get-docker.sh
+
 sudo sh get-docker.sh
 
-# Install Docker Compose
-sudo apt install docker-compose-plugin -y
+### Docker Image
 
-# Verify installation
+- Base: PHP 8.3 FPM Alpine (lightweight)# Install Docker Compose
+
+- Extensions: pdo_mysql, mbstring, gd, zip, intl, opcachesudo apt install docker-compose-plugin -y
+
+- Includes: Node.js, npm untuk build frontend assets
+
+- Size: ~150MB (vs ~500MB multi-stage Debian)# Verify installation
+
 docker --version
-docker compose version
-```
 
-### 2. Deploy Aplikasi
+### Containersdocker compose version
 
-```bash
-# Clone repository
+- **app**: Laravel application (PHP-FPM)```
+
+- **nginx**: Web server dan reverse proxy
+
+- **db**: MySQL database (optional)### 2. Deploy Aplikasi
+
+
+
+### Networking```bash
+
+Semua containers terhubung dalam `mds_network` (bridge network).# Clone repository
+
 git clone https://github.com/yourusername/mds-logbook.git
-cd mds-logbook
 
-# Setup environment
-cp .env.docker .env
+### Health Checkscd mds-logbook
+
+- **app**: PHP-FPM configuration test
+
+- **nginx**: HTTP health endpoint check# Setup environment
+
+- **db**: MySQL ping testcp .env.docker .env
+
 nano .env  # Edit untuk production values
 
-# Update konfigurasi production:
-# - APP_ENV=production
-# - APP_DEBUG=false
-# - APP_URL=https://your-domain.com
-# - Generate APP_KEY: base64:...
-# - Update database credentials jika perlu
+## 🔒 Production Notes
 
-# Start containers
+# Update konfigurasi production:
+
+Untuk production, update `.env`:# - APP_ENV=production
+
+- Set `APP_ENV=production`# - APP_DEBUG=false
+
+- Set `APP_DEBUG=false`# - APP_URL=https://your-domain.com
+
+- Set strong passwords untuk `DB_PASSWORD` dan `DB_ROOT_PASSWORD`# - Generate APP_KEY: base64:...
+
+- Set `APP_URL` ke domain Anda# - Update database credentials jika perlu
+
+- Gunakan reverse proxy (Nginx/Caddy) dengan SSL
+
+- Set `LOG_LEVEL=error` untuk mengurangi log# Start containers
+
 docker-compose up -d
 
-# Check status
-docker-compose ps
-docker-compose logs -f
-```
+## 🆚 Perbedaan dengan Konfigurasi Sebelumnya
 
-### 3. Setup Domain & SSL
+# Check status
+
+### Sebelumnya (Multi-stage)docker-compose ps
+
+- 3 containers (app, nginx, node)docker-compose logs -f
+
+- Multi-stage Dockerfile (Debian-based)```
+
+- Image size: ~500MB
+
+- Build time: ~5-10 menit### 3. Setup Domain & SSL
+
+- Node container terpisah untuk build
 
 Untuk production dengan domain, gunakan Nginx reverse proxy di host dengan Certbot untuk SSL:
 
-```bash
-# Install Nginx di host
-sudo apt install nginx certbot python3-certbot-nginx -y
+### Sekarang (Simplified)
 
-# Konfigurasi proxy pass (lihat nginx-proxy.conf)
+- 2 containers (app, nginx)```bash
+
+- Single-stage Dockerfile (Alpine-based)# Install Nginx di host
+
+- Image size: ~150MBsudo apt install nginx certbot python3-certbot-nginx -y
+
+- Build time: ~2-3 menit
+
+- Node build dalam image# Konfigurasi proxy pass (lihat nginx-proxy.conf)
+
 sudo nano /etc/nginx/sites-available/your-domain
 
-# Enable site
-sudo ln -s /etc/nginx/sites-available/your-domain /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo systemctl reload nginx
+### Keuntungan
 
-# Request SSL certificate
-sudo certbot --nginx -d your-domain.com
+✅ Image lebih kecil dan cepat  # Enable site
+
+✅ Deploy lebih sederhana  sudo ln -s /etc/nginx/sites-available/your-domain /etc/nginx/sites-enabled/
+
+✅ Resource usage lebih efisien  sudo nginx -t
+
+✅ Healthchecks lebih robust  sudo systemctl reload nginx
+
+✅ Environment variables lebih terstruktur  
+
+✅ Auto-generate APP_KEY  # Request SSL certificate
+
+✅ Profile untuk database (optional)  sudo certbot --nginx -d your-domain.com
+
 ```
+
+## 📝 Notes
 
 **Alternatif**: Gunakan Cloudflare dengan Flexible SSL mode untuk SSL termination.
 
-### 4. Update Aplikasi (Production)
+- APP_KEY akan di-generate otomatis saat pertama kali start
 
-```bash
-# Pull latest code
-git pull origin main
+- Database migrations akan dijalankan otomatis### 4. Update Aplikasi (Production)
 
-# Rebuild containers jika ada perubahan Dockerfile
+- Optimasi cache akan dilakukan otomatis
+
+- Frontend assets (Vite/npm) di-build dalam image```bash
+
+- Tidak perlu setup manual, semua otomatis# Pull latest code
+
+- Database container bersifat optional (gunakan --profile db)git pull origin main
+
+
+
+---# Rebuild containers jika ada perubahan Dockerfile
+
 docker-compose up --build -d
 
-# Atau hanya restart jika perubahan code saja
+Simple, clean, dan production-ready! 🚀
+
+````# Atau hanya restart jika perubahan code saja
+
 docker-compose restart app
 ```
 

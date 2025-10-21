@@ -1,72 +1,58 @@
 #!/bin/sh
+
 set -e
 
-[ -f artisan ] || { echo "Error: artisan not found in workdir"; exit 1; }
+echo "[INFO] Starting MDS Logbook Application..."
 
-echo "Cleaning up cache files..."
-rm -f bootstrap/cache/config.php bootstrap/cache/packages.php bootstrap/cache/services.php 2>/dev/null || true
-rm -f storage/framework/cache/data/* 2>/dev/null || true
+# Wait for database
+echo "[INFO] Waiting for database..."
+max_retries=30
+counter=0
 
-echo "Ensuring writable directories..."
-mkdir -p \
-  storage/logs \
-  storage/framework/cache/data \
-  storage/framework/sessions \
-  storage/framework/views \
-  storage/app \
-  bootstrap/cache
+while [ $counter -lt $max_retries ]; do
+    if php artisan db:show > /dev/null 2>&1; then
+        echo "[INFO] Database connected!"
+        break
+    fi
+    counter=$((counter + 1))
+    echo "[INFO] Waiting for database... ($counter/$max_retries)"
+    sleep 2
+done
 
-touch storage/logs/laravel.log 2>/dev/null || true
-
-# <<< Tambahkan baris ini: pastikan path cache Blade selalu valid >>>
-export VIEW_COMPILED_PATH=${VIEW_COMPILED_PATH:-/var/www/html/storage/framework/views}
-
-# Tunggu DB (jika ada)
-if [ -n "$DB_HOST" ]; then
-  echo "Waiting for database at ${DB_HOST}:${DB_PORT:-3306}..."
-  timeout=60; c=0
-  until nc -z "${DB_HOST}" "${DB_PORT:-3306}" || [ $c -eq $timeout ]; do
-    printf '.'; sleep 1; c=$((c+1))
-  done
-  [ $c -lt $timeout ] || { echo " Error: DB timeout"; exit 1; }
-  echo " database is available"
+if [ $counter -eq $max_retries ]; then
+    echo "[ERROR] Could not connect to database"
+    exit 1
 fi
 
-echo "=== CONTAINERIZED LARAVEL SETUP ==="
-
-# ====== APP_KEY AUTO (persist via storage/app/app_key) ======
-echo "=== STEP 1: APP_KEY AUTO-PROVISION ==="
-KEY_FILE="storage/app/app_key"
-if [ -n "$APP_KEY" ] && [ "$APP_KEY" != "base64:" ]; then
-  echo "✅ APP_KEY provided via ENV"
-else
-  if [ -s "$KEY_FILE" ]; then
-    export APP_KEY="$(tr -d '\r\n' < "$KEY_FILE")"
-    echo "✅ APP_KEY loaded from $KEY_FILE"
-  else
-    echo "🔑 Generating APP_KEY..."
-    export APP_KEY="$(php -r 'echo "base64:".base64_encode(random_bytes(32));')"
-    printf "%s\n" "$APP_KEY" > "$KEY_FILE" 2>/dev/null || echo "⚠️  Warning: cannot write $KEY_FILE (key will be ephemeral)"
-    chmod 640 "$KEY_FILE" 2>/dev/null || true
-    echo "✅ APP_KEY generated and stored to $KEY_FILE"
-  fi
+# Generate APP_KEY if not set
+if [ -z "$APP_KEY" ] || [ "$APP_KEY" = "base64:" ]; then
+    echo "[INFO] Generating APP_KEY..."
+    export APP_KEY=$(php artisan key:generate --show)
+    echo "[INFO] Generated APP_KEY: ${APP_KEY:0:20}..."
 fi
 
-echo "=== STEP 2: CACHE MANAGEMENT ==="
-php artisan config:clear  2>/dev/null || echo "Warning: config clear failed"
-php artisan cache:clear   2>/dev/null || echo "Warning: cache clear failed"
-php artisan view:clear    2>/dev/null || echo "Warning: view clear failed"
-php artisan route:clear   2>/dev/null || echo "Warning: route clear failed"
+# Run migrations
+echo "[INFO] Running migrations..."
+php artisan migrate --force
 
-echo "=== STEP 3: PACKAGE DISCOVERY ==="
-php artisan package:discover --ansi 2>/dev/null || echo "Warning: package discovery failed"
+# Optimize for production
+echo "[INFO] Optimizing application..."
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
 
-echo "=== STEP 4: CONFIG CACHE ==="
-php artisan config:cache  2>/dev/null || echo "Warning: config cache failed"
+# Create storage link
+if [ ! -L public/storage ]; then
+    echo "[INFO] Creating storage link..."
+    php artisan storage:link 2>/dev/null || true
+fi
 
-echo "=== STEP 5: DATABASE MIGRATIONS ==="
-php artisan migrate --force || echo "Warning: migration failed"
+# Fix permissions
+echo "[INFO] Setting permissions..."
+chown -R www-data:www-data storage bootstrap/cache
+chmod -R 775 storage bootstrap/cache
 
-echo "=== LARAVEL SETUP COMPLETED ==="
-echo "Starting PHP-FPM..."
-exec php-fpm
+echo "[INFO] Application ready!"
+
+# Execute CMD
+exec "$@"
