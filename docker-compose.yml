@@ -33,9 +33,9 @@ services:
       retries: 3
       start_period: 40s
 
-  nginx:
+  web:
     image: nginx:1.27-alpine
-    container_name: mds_logbook_nginx
+    container_name: mds_logbook_web
     restart: unless-stopped
     ports:
       - "${APP_PORT}:80"
